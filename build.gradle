@@ -23,9 +23,13 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'//jpa를 사용하려면 @Entity사용
 	compileOnly 'org.projectlombok:lombok'
 	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	//runtimeOnly 'mysql:mysql-connector-java:8.0.33'에서 8.0.33등 버전을 붙여줘야 application.properties에서 드라이버 추가가능
+	runtimeOnly 'mysql:mysql-connector-java:8.0.33'
 }
 
 tasks.named('test') {
