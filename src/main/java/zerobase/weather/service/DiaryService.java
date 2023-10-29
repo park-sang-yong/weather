@@ -4,11 +4,15 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import zerobase.weather.WeatherApplication;
 import zerobase.weather.domain.DateWeather;
 import zerobase.weather.domain.Diary;
 import zerobase.weather.repository.DateWeatherRepository;
@@ -31,7 +35,7 @@ public class DiaryService {
 
     private final DiaryRepository diaryRepository;
     private final DateWeatherRepository dateWeatherRepository;
-
+    private static final Logger logger = LoggerFactory.getLogger(WeatherApplication.class);
 
     public DiaryService(DiaryRepository diaryRepository, DateWeatherRepository dateWeatherRepository) {
         this.diaryRepository = diaryRepository;
@@ -39,14 +43,16 @@ public class DiaryService {
     }
 
     @Transactional
-    //@Scheduled(cron= "0 0 1 * * *")//매일 1시 마다 호출
-    @Scheduled(cron= "0/5 * * * * *")//매 5초마다 호출
+    @Scheduled(cron= "0 0 1 * * *")//매일 1시 마다 호출
+    //@Scheduled(cron= "0/5 * * * * *")//매 5초마다 호출
     public void saveWeatherDate(){
+        logger.info("today get weather complete");
         dateWeatherRepository.save(getWeatherFromApi());
     }
 
-    @Transactional(isolation = Isolation.SERIALIZABLE)
+    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.NESTED)
     public void createDiary(LocalDate date, String text) {
+        logger.info("started to create diary");
         //날씨 데이터 가져오기(API에서 가져오기? or DB에서 가져오기)
         DateWeather dateWeather = getDateWeather(date);
         //파싱된 데이터 + 일기 값 db에 넣기
@@ -56,6 +62,7 @@ public class DiaryService {
         nowDiary.setDate(date);
 
         diaryRepository.save(nowDiary);
+        logger.info("end to create diary");
     }
 
     private DateWeather getWeatherFromApi(){
@@ -71,6 +78,8 @@ public class DiaryService {
         return dateWeather;
     }
 
+
+
     private DateWeather getDateWeather(LocalDate date){
         List<DateWeather> dateWeatherListFromDB = dateWeatherRepository.findAllByDate(date);
         if (dateWeatherListFromDB.size() == 0){
@@ -81,21 +90,25 @@ public class DiaryService {
             return dateWeatherListFromDB.get(0);
         }
     }
-    @Transactional(readOnly = true)
+    @Transactional(isolation = Isolation.REPEATABLE_READ, readOnly = true)
     public List<Diary> readDiary(LocalDate date) {
         return diaryRepository.findAllByDate(date);
     }
 
+    @Transactional(isolation = Isolation.REPEATABLE_READ, readOnly = true)
     public List<Diary> readDiaries(LocalDate startDate, LocalDate endDate) {
         return diaryRepository.findAllByDateBetween(startDate, endDate);
     }
 
+
+    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.NESTED)
     public void updateDiary(LocalDate date, String text) {
         Diary nowDiary = diaryRepository.getFirstByDate(date);
         nowDiary.setText(text);
         diaryRepository.save(nowDiary);
     }
 
+    @Transactional(isolation = Isolation.SERIALIZABLE, propagation = Propagation.NESTED)
     public void deleteDiary(LocalDate date){
         diaryRepository.deleteAllByDate(date);
     }
