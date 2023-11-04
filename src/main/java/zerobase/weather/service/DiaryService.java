@@ -35,7 +35,7 @@ public class DiaryService {
 
     private final DiaryRepository diaryRepository;
     private final DateWeatherRepository dateWeatherRepository;
-    private static final Logger logger = LoggerFactory.getLogger(WeatherApplication.class);
+    private static final Logger logger = LoggerFactory.getLogger(DiaryService.class);
 
     public DiaryService(DiaryRepository diaryRepository, DateWeatherRepository dateWeatherRepository) {
         this.diaryRepository = diaryRepository;
@@ -125,7 +125,7 @@ public class DiaryService {
             if (responseCode == 200) {
                 br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
             } else {
-                br = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+                br = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
             }
             String inputLine;
             StringBuilder response = new StringBuilder();
